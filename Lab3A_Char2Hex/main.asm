@@ -39,23 +39,33 @@ mainLoop
 			mov.w #newLine, R5			; Print newline
 			call #OUTA_STR_UART
 
-			mov.b R4, R6
-			rrc.b R4					; Need to shift to get 4 msb
-			rrc.b R4
-			rrc.b R4
-			rrc.b R4
-			add.b #strg1, R4			; Add offset of hex val relative to array start
-			mov.b 0(R4), R4				; Hex[i>>4] (Getting char from string)
-			call #OUTA_UART				; Prints char
-
-			mov.b R6, R4
-			bic.b #0x0F, R4				; Gets 4 lsb
-			add.b #strg1, R4			; Prints char based on offset
-			call #OUTA_UART
+			call #OUTH_UART
 
 			call #OUTA_STR_UART			; Print newline (R5 was never reset)
 
 			jmp mainLoop				; Loop and wait for next status change
+
+OUTH_UART
+;----------------------------------------------------------------
+; prints to the screen the Hex value stored in register 4 and
+; uses register 5 as a temp value
+;----------------------------------------------------------------
+			push R4
+			push R5
+			mov.b R4, R5
+			mul.b #0x10, R4
+			add.b #strg1, R4			; Add offset of hex val relative to array start
+			mov.b 0(R4), R4				; Hex[i>>4] (Getting char from string)
+			call #OUTA_UART				; Prints char
+
+			mov.b R5, R4
+			bic.b #0x0F, R4				; Gets 4 lsb
+			add.b #strg1, R4			; Prints char based on offset
+			call #OUTA_UART
+
+			pop R5
+			pop R4
+			rtn
 
 OUTA_STR_UART
 ;----------------------------------------------------------------

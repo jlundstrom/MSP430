@@ -35,10 +35,13 @@ SetupP2		bis.b #02h,&P2DIR			; P2.2 output
 			call #Init_UART				; go initialize the uart
 
 mainLoop
-			call GET_HEX_VALUE
+			call #GET_HEX_VALUE
 			mov.b R4, R5
-			rlc.b #0x04, R5
-			call GET_HEX_VALUE
+			rlc.b R5					; Need to shift 4 times or mul by 16
+			rlc.b R5
+			rlc.b R5
+			rlc.b R5
+			call #GET_HEX_VALUE
 			bis.b R5, R4
 
 			mov.w #strg1,R5				; String Pointer
@@ -75,12 +78,16 @@ GET_HEX_VALUE
 			call #INCHAR_UART
 			call #OUTA_UART
 
-			jge #0x3A, R4, chkAlpha		; '0'-'9' is 0x30-0x39
-			jl #0x30, R4, chkAlpha
+			cmp #0x3A, R4
+			jge chkAlpha				; '0'-'9' is 0x30-0x39
+			cmp #0x30, R4
+			jl chkAlpha
 			and.b #0x0F, R4				; Return first 4 bits set
 			jmp RtnGHV
-chkAlpha	jge	#0x47, R4, Invalid		; 'A'-'F' is 0x41-0x46
-			jl #0x41, R4, Invalid
+chkAlpha	cmp #0x47, R4
+			jge	Invalid					; 'A'-'F' is 0x41-0x46
+			cmp #0x41, R4
+			jl Invalid
 			sub.b #0x37, R4				; 0x37 is offset from ascii
 			jmp RtnGHV
 Invalid		mov.b #0x00, R4				; if invalid clear

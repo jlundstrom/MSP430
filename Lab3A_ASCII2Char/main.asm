@@ -9,8 +9,13 @@
 ; Main Code
 ;----------------------------------------------------------------
 ; This is the stack and variable area of RAM and begins at
-			.sect ".const"				; initialized data rom for constants.
-strg1		.string "Laboratory #2 for EEL 4742 embedded Systems"
+; address 0x1100 can be used for program code or constants
+
+			.sect ".sysmem"				; initialized data rom for
+	 									; constants. Use this .sect to
+										; put data in ROM
+strg1		.byte 0x0d,0x0a 			; add a CR and a LF
+			.string	"_"
 										; String used for print function
 	 									; in ROM
 			.byte 0x0d,0x0a 			; add a CR and a LF
@@ -29,10 +34,18 @@ SetupP2		bis.b #02h,&P2DIR			; P2.2 output
 
 			call #Init_UART				; go initialize the uart
 
-			mov.w #strg1, R5			; Load the string pointer
-			call #OUTA_STR_UART			; Call string print function
+mainLoop
+			call GET_HEX_VALUE
+			mov.b R4, R5
+			rlc.b #0x04, R5
+			call GET_HEX_VALUE
+			bis.b R5, R4
 
-nothing		jmp nothing					; Infinet loop to end program
+			mov.w #strg1,R5				; String Pointer
+			mov.b R4, 2(R5)
+			call #OUTA_STR_UART
+
+			jmp mainLoop				; Loop and wait for next status change
 
 OUTA_STR_UART
 ;----------------------------------------------------------------
@@ -53,6 +66,25 @@ getChar		mov.b 0(R5),R4				; Get char at Address
 RtnPrint	pop R5						; Restore registers we modified
 			pop R4
 			ret							; Return to caller
+
+GET_HEX_VALUE
+;----------------------------------------------------------------
+; Gets a character from the screen and converts it to hex if its
+; Returns in R4 					e.g. '2' => 0x2 and 'F' => 0xF
+;----------------------------------------------------------------
+			call #INCHAR_UART
+			call #OUTA_UART
+
+			jge #0x3A, R4, chkAlpha		; '0'-'9' is 0x30-0x39
+			jl #0x30, R4, chkAlpha
+			and.b #0x0F, R4				; Return first 4 bits set
+			jmp RtnGHV
+chkAlpha	jge	#0x47, R4, Invalid		; 'A'-'F' is 0x41-0x46
+			jl #0x41, R4, Invalid
+			sub.b #0x37, R4				; 0x37 is offset from ascii
+			jmp RtnGHV
+Invalid		mov.b #0x00, R4				; if invalid clear
+RtnGHV		ret
 
 OUTA_UART
 ;----------------------------------------------------------------

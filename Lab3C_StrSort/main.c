@@ -44,13 +44,13 @@ void SortString(unsigned char* A) {
 	unsigned char i = 0;
 	unsigned char j = 0;
 	unsigned char tmp;
-	for (i = 1; A[i]; i++)
-		for (j = 1; A[j]; j++)
-			if(A[j-1] > A[j])
+	for (i = 0; A[i]; i++)
+		for (j = 0; A[j+i]; j++)
+			if(A[j] > A[j+1])
 			{
-				tmp = A[j-1];
-				A[j - 1] = A[j];
-				A[j] = tmp;
+				tmp = A[j];
+				A[j] = A[j+1];
+				A[j + 1] = tmp;
 			}
 }
 

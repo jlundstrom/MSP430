@@ -41,10 +41,10 @@ mainLoop
 inLoop		call #INCHAR_UART
 			call #OUTA_UART
 			cmp.w #0x0d, R4
-			jeq #inDone					; Enter detected
+			jeq inDone					; Enter detected
 			mov.b R4, (R6)
-			addi.w #0x01, R6
-			addi.b #-1, R7				; decrmenet loop counter
+			add.w #0x01, R6
+			add.b #-1, R7				; decrmenet loop counter
 			tst R7						; Check if more bits are needed
 			jnz inLoop
 
@@ -73,9 +73,34 @@ SORT_BYTE
 ; Sorts the byte array starting at register 5 and
 ; uses register 4 as a temp value
 ;----------------------------------------------------------------
-			push R5
-			push R4
-			;
+			push R5						; i
+			push R4						; j
+			push R6						; tmp
+			push R7						; Array head
+
+			mov.w R5, R7
+
+SB_Outer	tst 0(R5)					; Start of outer loop
+			jz SB_Rtn
+
+			mov.w R7, R4				; Start of inner loop
+SB_Inner	tst.w 0(R4)
+			jz SB_InnerBreak
+
+			cmp 1(R4), 0(R4)
+			jge SB_InnerEnd
+			mov.b 0(R4), R6
+			mov.b 1(R4), 0(R4)
+			mov.b r6, 1(R4)
+
+SB_InnerEnd	add.w #0x01, R4
+			jmp SB_Inner				; End of inner loop
+SB_InnerBreak
+			add.w #0x01, R5				; End of outer loop
+			jmp SB_Outer
+
+			pop R7
+SB_Rtn		pop R6
 			pop R4
 			pop R5
 			ret
@@ -99,28 +124,6 @@ getChar		mov.b 0(R5),R4				; Get char at Address
 RtnPrint	pop R5						; Restore registers we modified
 			pop R4
 			ret							; Return to caller
-
-OUTH_UART
-;----------------------------------------------------------------
-; prints to the screen the Hex value stored in register 4 and
-; uses register 5 as a temp value
-;----------------------------------------------------------------
-			push R4
-			push R5
-			mov.b R4, R5
-			mul.b #0x10, R4
-			add.b #strg1, R4			; Add offset of hex val relative to array start
-			mov.b 0(R4), R4				; Hex[i>>4] (Getting char from string)
-			call #OUTA_UART				; Prints char
-
-			mov.b R5, R4
-			bic.b #0x0F, R4				; Gets 4 lsb
-			add.b #strg1, R4			; Prints char based on offset
-			call #OUTA_UART
-
-			pop R5
-			pop R4
-			rtn
 
 OUTA_UART
 ;----------------------------------------------------------------
@@ -149,9 +152,9 @@ INBIT_UART
 			call #INCHAR_UART
 			call #OUTA_UART
 
-			xor.b R4,R4,#0x30		; If input is '0' xor 0x30 = 0
+			xor.b #0x30,R4			; If input is '0' xor 0x30 = 0
 			tst R4					; If it ends up being zero rtn
-			JZ INBIT_ret
+			jz INBIT_ret
 			mov.b #0x01,R4			; Else ret 1
 INBIT_ret	ret
 

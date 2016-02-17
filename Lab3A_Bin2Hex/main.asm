@@ -31,19 +31,46 @@ StopWDT		mov.w #WDTPW+WDTHOLD,&WDTCTL	; Stop WDT
 SetupP2		bis.b #02h,&P2DIR			; P2.2 output
 
 			call #Init_UART				; go initialize the uart
+			mov.w #newLine, R5			; Preload newline address
 
 mainLoop
-			call #INCHAR_UART
-			call #OUTA_UART
+			mov.b #0x08, R7				; Input counter
 
-			mov.w #newLine, R5			; Print newline
-			call #OUTA_STR_UART
+inLoop		call #INBIT_UART			; Get next bit
+			rla.b R6					; Shift char output to make room for new bit
+			bis.b R4, R6				; Add bit
+			addi.b #-1, R7				; decrmenet loop counter
+			tst R7						; Check if more bits are needed
+			jnz inLoop
 
-			call #OUTH_UART
+			mov.b R6, R4				; Move inputed char to Char Print Reg
+
+			call #OUTA_STR_UART			; Print newline
+			call #OUTH_UART				; Print Hex
 
 			call #OUTA_STR_UART			; Print newline (R5 was never reset)
 
-			jmp mainLoop				; Loop and wait for next status change
+			jmp mainLoop				; Loop
+
+OUTA_STR_UART
+;----------------------------------------------------------------
+; prints to the screen the ASCII String starting at register 5 and
+; uses register 4 as a temp value
+;----------------------------------------------------------------
+			push R4						; Store R5&R4 because we overwite them
+			push R5
+
+getChar		mov.b 0(R5),R4				; Get char at Address
+			cmp.b #0x00,R4				; Is it the null terminator?
+			jz RtnPrint					; If so return
+			call #OUTA_UART				; Else Call print char command
+			inc R5						; Increment to next address
+			jmp getChar					; Get the next character
+
+
+RtnPrint	pop R5						; Restore registers we modified
+			pop R4
+			ret							; Return to caller
 
 OUTH_UART
 ;----------------------------------------------------------------
@@ -67,26 +94,6 @@ OUTH_UART
 			pop R4
 			rtn
 
-OUTA_STR_UART
-;----------------------------------------------------------------
-; prints to the screen the ASCII String starting at register 5 and
-; uses register 4 as a temp value
-;----------------------------------------------------------------
-			push R4						; Store R5&R4 because we overwite them
-			push R5
-
-getChar		mov.b 0(R5),R4				; Get char at Address
-			cmp.b #0x00,R4				; Is it the null terminator?
-			jz RtnPrint					; If so return
-			call #OUTA_UART				; Else Call print char command
-			inc R5						; Increment to next address
-			jmp getChar					; Get the next character
-
-
-RtnPrint	pop R5						; Restore registers we modified
-			pop R4
-			ret							; Return to caller
-
 OUTA_UART
 ;----------------------------------------------------------------
 ; prints to the screen the ASCII value stored in register 4 and
@@ -105,6 +112,20 @@ lpa			mov.b &IFG2,R5
 			mov.b R4,&UCA0TXBUF
 			pop R5
 			ret
+
+INBIT_UART
+;----------------------------------------------------------------
+; returns a 1 or 0 value in register 4
+; invalid inputs will return 1
+;----------------------------------------------------------------
+			call #INCHAR_UART
+			call #OUTA_UART
+
+			xor.b R4,R4,#0x30		; If input is '0' xor 0x30 = 0
+			tst R4					; If it ends up being zero rtn
+			JZ INBIT_ret
+			mov.b #0x01,R4			; Else ret 1
+INBIT_ret	ret
 
 INCHAR_UART
 ;----------------------------------------------------------------

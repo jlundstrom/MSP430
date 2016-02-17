@@ -39,7 +39,7 @@ mainLoop
 inLoop		call #INBIT_UART			; Get next bit
 			rla.b R6					; Shift char output to make room for new bit
 			bis.b R4, R6				; Add bit
-			addi.b #-1, R7				; decrmenet loop counter
+			add.b #-1, R7				; decrmenet loop counter
 			tst R7						; Check if more bits are needed
 			jnz inLoop
 
@@ -80,7 +80,10 @@ OUTH_UART
 			push R4
 			push R5
 			mov.b R4, R5
-			mul.b #0x10, R4
+			rla.b R4
+			rla.b R4
+			rla.b R4
+			rla.b R4
 			add.b #strg1, R4			; Add offset of hex val relative to array start
 			mov.b 0(R4), R4				; Hex[i>>4] (Getting char from string)
 			call #OUTA_UART				; Prints char
@@ -92,7 +95,7 @@ OUTH_UART
 
 			pop R5
 			pop R4
-			rtn
+			ret
 
 OUTA_UART
 ;----------------------------------------------------------------
@@ -121,7 +124,7 @@ INBIT_UART
 			call #INCHAR_UART
 			call #OUTA_UART
 
-			xor.b R4,R4,#0x30		; If input is '0' xor 0x30 = 0
+			xor.b #0x30,R4			; If input is '0' xor 0x30 = 0
 			tst R4					; If it ends up being zero rtn
 			JZ INBIT_ret
 			mov.b #0x01,R4			; Else ret 1

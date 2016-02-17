@@ -53,7 +53,10 @@ OUTH_UART
 			push R4
 			push R5
 			mov.b R4, R5
-			mul.b #0x10, R4
+			rla.b R4
+			rla.b R4
+			rla.b R4
+			rla.b R4
 			add.b #strg1, R4			; Add offset of hex val relative to array start
 			mov.b 0(R4), R4				; Hex[i>>4] (Getting char from string)
 			call #OUTA_UART				; Prints char
@@ -65,7 +68,7 @@ OUTH_UART
 
 			pop R5
 			pop R4
-			rtn
+			ret
 
 OUTA_STR_UART
 ;----------------------------------------------------------------

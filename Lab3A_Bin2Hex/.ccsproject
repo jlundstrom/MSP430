@@ -2,12 +2,12 @@
 <?ccsproject version="1.0"?>
 <projectOptions>
 	<deviceVariant value="MSP430F4618"/>
-	<deviceFamily value="MSP430"/>
-	<codegenToolVersion value="4.4.5"/>
-	<isElfFormat value="true"/>
+	<deviceEndianness value="little"/>
+	<codegenToolVersion value="4.0.0"/>
+	<isElfFormat value="false"/>
 	<connection value="common/targetdb/connections/TIMSP430-USB.xml"/>
 	<linkerCommandFile value="lnk_msp430f4618.cmd"/>
-	<rts value="libc.a"/>
-	<createSlaveProjects value=""/>
-	<templateProperties value="id=com.ti.ccstudio.project.templates.emptyAssemblyOnly_msp430,isAssemblyOnly=true,"/>
+	<rts value=""/>
+	<templateProperties value="id=com.ti.ccstudio.project.templates.EmptyAssemblyOnly,isAssemblyOnly=true,"/>
+	<deviceFamily value="MSP430"/>
 </projectOptions>

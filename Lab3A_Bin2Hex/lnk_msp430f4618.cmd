@@ -1,35 +1,3 @@
-/* ============================================================================ */
-/* Copyright (c) 2015, Texas Instruments Incorporated                           */
-/*  All rights reserved.                                                        */
-/*                                                                              */
-/*  Redistribution and use in source and binary forms, with or without          */
-/*  modification, are permitted provided that the following conditions          */
-/*  are met:                                                                    */
-/*                                                                              */
-/*  *  Redistributions of source code must retain the above copyright           */
-/*     notice, this list of conditions and the following disclaimer.            */
-/*                                                                              */
-/*  *  Redistributions in binary form must reproduce the above copyright        */
-/*     notice, this list of conditions and the following disclaimer in the      */
-/*     documentation and/or other materials provided with the distribution.     */
-/*                                                                              */
-/*  *  Neither the name of Texas Instruments Incorporated nor the names of      */
-/*     its contributors may be used to endorse or promote products derived      */
-/*     from this software without specific prior written permission.            */
-/*                                                                              */
-/*  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" */
-/*  AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,       */
-/*  THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR      */
-/*  PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR            */
-/*  CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,       */
-/*  EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,         */
-/*  PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; */
-/*  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,    */
-/*  WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR     */
-/*  OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,              */
-/*  EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.                          */
-/* ============================================================================ */
-
 /******************************************************************************/
 /* lnk_msp430f4618.cmd - LINKER COMMAND FILE FOR LINKING MSP430F4618 PROGRAMS     */
 /*                                                                            */
@@ -44,11 +12,10 @@
 /* -heap   0x0100                                   HEAP AREA SIZE            */
 /*                                                                            */
 /*----------------------------------------------------------------------------*/
-/* Version: 1.173                                                             */
-/*----------------------------------------------------------------------------*/
+
 
 /****************************************************************************/
-/* Specify the system memory map                                            */
+/* SPECIFY THE SYSTEM MEMORY MAP                                            */
 /****************************************************************************/
 
 MEMORY
@@ -59,9 +26,8 @@ MEMORY
     RAM                     : origin = 0x1100, length = 0x2000
     INFOA                   : origin = 0x1080, length = 0x0080
     INFOB                   : origin = 0x1000, length = 0x0080
-    FLASH                   : origin = 0x3100, length = 0xCEBE
+    FLASH                   : origin = 0x3100, length = 0xCEC0
     FLASH2                  : origin = 0x10000,length = 0x10000
-    BSLSIGNATURE            : origin = 0xFFBE, length = 0x0002, fill = 0xFFFF
     INT00                   : origin = 0xFFC0, length = 0x0002
     INT01                   : origin = 0xFFC2, length = 0x0002
     INT02                   : origin = 0xFFC4, length = 0x0002
@@ -97,77 +63,66 @@ MEMORY
 }
 
 /****************************************************************************/
-/* Specify the sections allocation into memory                              */
+/* SPECIFY THE SECTIONS ALLOCATION INTO MEMORY                              */
 /****************************************************************************/
 
 SECTIONS
 {
-    .bss        : {} > RAM                  /* Global & static vars              */
-    .data       : {} > RAM                  /* Global & static vars              */
-    .TI.noinit  : {} > RAM                  /* For #pragma noinit                */
-    .sysmem     : {} > RAM                  /* Dynamic memory allocation area    */
-    .stack      : {} > RAM (HIGH)           /* Software system stack             */
+    .bss       : {} > RAM                /* GLOBAL & STATIC VARS              */
+    .sysmem    : {} > RAM                /* DYNAMIC MEMORY ALLOCATION AREA    */
+    .stack     : {} > RAM (HIGH)         /* SOFTWARE SYSTEM STACK             */
 
-#ifndef __LARGE_DATA_MODEL__
-    .text       : {}>> FLASH                /* Code                              */
-#else
-    .text       : {}>> FLASH2 | FLASH       /* Code                              */
-#endif
-    .text:_isr  : {} > FLASH                /* ISR Code space                    */
-    .cinit      : {} > FLASH                /* Initialization tables             */
-#ifndef __LARGE_DATA_MODEL__
-    .const      : {} > FLASH                /* Constant data                     */
-#else
-    .const      : {} > FLASH | FLASH2       /* Constant data                     */
-#endif
-    .bslsignature  : {} > BSLSIGNATURE      /* BSL Signature                     */
-    .cio        : {} > RAM                  /* C I/O Buffer                      */
+    .text      : {}>> FLASH | FLASH2     /* CODE                              */
+    .text:_isr : {} > FLASH              /* ISR CODE SPACE                    */
+    .cinit     : {} > FLASH              /* INITIALIZATION TABLES             */
+//#ifdef (__LARGE_DATA_MODEL__)
+    .const     : {} > FLASH | FLASH2     /* CONSTANT DATA                     */
+//#else
+//    .const     : {} > FLASH              /* CONSTANT DATA                     */
+//#endif
+    .cio       : {} > RAM                /* C I/O BUFFER                      */
 
-    .pinit      : {} > FLASH                /* C++ Constructor tables            */
-    .init_array : {} > FLASH                /* C++ Constructor tables            */
-    .mspabi.exidx : {} > FLASH              /* C++ Constructor tables            */
-    .mspabi.extab : {} > FLASH              /* C++ Constructor tables            */
+    .pinit     : {} > FLASH              /* C++ CONSTRUCTOR TABLES            */
 
-    .infoA     : {} > INFOA              /* MSP430 INFO FLASH Memory segments */
+    .infoA     : {} > INFOA              /* MSP430 INFO FLASH MEMORY SEGMENTS */
     .infoB     : {} > INFOB
 
-    /* MSP430 Interrupt vectors          */
-    .int00       : {}               > INT00
-    .int01       : {}               > INT01
-    .int02       : {}               > INT02
-    .int03       : {}               > INT03
-    .int04       : {}               > INT04
-    .int05       : {}               > INT05
-    .int06       : {}               > INT06
-    .int07       : {}               > INT07
-    .int08       : {}               > INT08
-    .int09       : {}               > INT09
-    .int10       : {}               > INT10
-    .int11       : {}               > INT11
-    .int12       : {}               > INT12
-    .int13       : {}               > INT13
-    .int14       : {}               > INT14
-    DMA          : { * ( .int15 ) } > INT15 type = VECT_INIT
-    BASICTIMER   : { * ( .int16 ) } > INT16 type = VECT_INIT
-    PORT2        : { * ( .int17 ) } > INT17 type = VECT_INIT
-    USART1TX     : { * ( .int18 ) } > INT18 type = VECT_INIT
-    USART1RX     : { * ( .int19 ) } > INT19 type = VECT_INIT
-    PORT1        : { * ( .int20 ) } > INT20 type = VECT_INIT
-    TIMERA1      : { * ( .int21 ) } > INT21 type = VECT_INIT
-    TIMERA0      : { * ( .int22 ) } > INT22 type = VECT_INIT
-    ADC12        : { * ( .int23 ) } > INT23 type = VECT_INIT
-    USCIAB0TX    : { * ( .int24 ) } > INT24 type = VECT_INIT
-    USCIAB0RX    : { * ( .int25 ) } > INT25 type = VECT_INIT
-    WDT          : { * ( .int26 ) } > INT26 type = VECT_INIT
-    COMPARATORA   : { * ( .int27 ) } > INT27 type = VECT_INIT
-    TIMERB1      : { * ( .int28 ) } > INT28 type = VECT_INIT
-    TIMERB0      : { * ( .int29 ) } > INT29 type = VECT_INIT
-    NMI          : { * ( .int30 ) } > INT30 type = VECT_INIT
-    .reset       : {}               > RESET  /* MSP430 Reset vector         */
+    .int00   : {} > INT00                /* MSP430 INTERRUPT VECTORS          */
+    .int01   : {} > INT01
+    .int02   : {} > INT02
+    .int03   : {} > INT03
+    .int04   : {} > INT04
+    .int05   : {} > INT05
+    .int06   : {} > INT06
+    .int07   : {} > INT07
+    .int08   : {} > INT08
+    .int09   : {} > INT09
+    .int10   : {} > INT10
+    .int11   : {} > INT11
+    .int12   : {} > INT12
+    .int13   : {} > INT13
+    .int14   : {} > INT14
+    .int15   : {} > INT15
+    .int16   : {} > INT16
+    .int17   : {} > INT17
+    .int18   : {} > INT18
+    .int19   : {} > INT19
+    .int20   : {} > INT20
+    .int21   : {} > INT21
+    .int22   : {} > INT22
+    .int23   : {} > INT23
+    .int24   : {} > INT24
+    .int25   : {} > INT25
+    .int26   : {} > INT26
+    .int27   : {} > INT27
+    .int28   : {} > INT28
+    .int29   : {} > INT29
+    .int30   : {} > INT30
+    .reset   : {} > RESET              /* MSP430 RESET VECTOR               */ 
 }
 
 /****************************************************************************/
-/* Include peripherals memory map                                           */
+/* INCLUDE PERIPHERALS MEMORY MAP                                           */
 /****************************************************************************/
 
 -l msp430f4618.cmd

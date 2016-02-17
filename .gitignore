@@ -50,25 +50,25 @@ local.properties
 .externalToolBuilders/
 
 # Locally stored "Eclipse launch configurations"
-*.launch
+#*.launch
 
 # PyDev specific (Python IDE for Eclipse)
-*.pydevproject
+#*.pydevproject
 
 # CDT-specific (C/C++ Development Tooling)
-.cproject
+#.cproject
 
 # JDT-specific (Eclipse Java Development Tools)
-.classpath
+#.classpath
 
 # Java annotation processor (APT)
 .factorypath
 
 # PDT-specific (PHP Development Tools)
-.buildpath
+#.buildpath
 
 # sbteclipse plugin
-.target
+#.target
 
 # Tern plugin
 .tern-project

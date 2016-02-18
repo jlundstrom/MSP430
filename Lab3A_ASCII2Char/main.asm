@@ -41,6 +41,7 @@ mainLoop
 			rlc.b R5
 			rlc.b R5
 			rlc.b R5
+			bic.b #0x0F, R5
 			call #GET_HEX_VALUE
 			bis.b R5, R4
 

@@ -42,13 +42,13 @@ inLoop		call #INCHAR_UART
 			call #OUTA_UART
 			cmp.w #0x0d, R4
 			jeq inDone					; Enter detected
-			mov.b R4, (R6)
-			add.w #0x01, R6
+			mov.b R4, 0(R6)
+			add.w #1, R6
 			add.b #-1, R7				; decrmenet loop counter
 			tst R7						; Check if more bits are needed
 			jnz inLoop
 
-inDone		mov.b #0x00, (R6)
+inDone		mov.b #0x00, 0(R6)
 
 			mov.w #newLine, R5			; newline address
 			call #OUTA_STR_UART			; Print newline
@@ -60,7 +60,7 @@ inDone		mov.b #0x00, (R6)
 			call #OUTA_STR_UART			; Print newline
 
 			mov.w #buff, R5				; buffer address
-			call SORT_BYTE
+			call #SORT_BYTE
 			call #OUTA_STR_UART			; Print buffer
 
 			mov.w #newLine, R5			; newline address
@@ -77,7 +77,7 @@ SORT_BYTE
 			push R4						; j
 			push R6						; tmp
 			push R7						; Array head
-
+			;jmp SB_Rtn
 			mov.w R5, R7
 
 SB_Outer	tst 0(R5)					; Start of outer loop
@@ -99,8 +99,8 @@ SB_InnerBreak
 			add.w #0x01, R5				; End of outer loop
 			jmp SB_Outer
 
-			pop R7
-SB_Rtn		pop R6
+SB_Rtn		pop R7
+			pop R6
 			pop R4
 			pop R5
 			ret
@@ -119,7 +119,6 @@ getChar		mov.b 0(R5),R4				; Get char at Address
 			call #OUTA_UART				; Else Call print char command
 			inc R5						; Increment to next address
 			jmp getChar					; Get the next character
-
 
 RtnPrint	pop R5						; Restore registers we modified
 			pop R4

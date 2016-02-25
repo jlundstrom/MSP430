@@ -28,13 +28,11 @@ Mainloop	call #INCHAR_UART			; Get user input
 			call #OUTA_UART				; Echo back input
 			mov.b R4, R5				; Get user entered char
 
-			xor.b #0x47,R5				; is char G?
-			cmp.b #0x00,R5
-			jz InputG					; If it is jump to green toggle
-			mov.b R4, R5				; Refetch user entered char
-			xor.b #0x59,R5				; check if its a Y
-			cmp.b #0x00,R5
-			jz InputY					; If it is jump to yellow toggle
+
+			cmp.b #0x47,R5				; is char G?
+			jeq InputG					; If it is jump to green toggle
+			cmp.b #0x59,R5				; check if its a Y
+			jeq InputY					; If it is jump to yellow toggle
 			jmp Mainloop				; If neither wait for next input
 
 InputG		xor.b #0x04,P2OUT			; Toggle green LED

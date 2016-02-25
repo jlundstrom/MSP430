@@ -10,10 +10,10 @@
 ;----------------------------------------------------------------
 ; This is the stack and variable area of RAM and begins at
 			.sect ".const"				; initialized data rom for constants.
-strg1		.string "Laboratory #2 for EEL 4742 embedded Systems"
+strg1		.string "Laboratory #2 for EEL 4742 Embedded Systems"
 										; String used for print function
 	 									; in ROM
-			.byte 0x0d,0x0a 			; add a CR and a LF
+			.byte 0x0d,0x0a 			; add a Carriage Return and a Line Feed
 			.byte 0x00					; null terminate the string with
 
 ; This is the code area flash begins at address 0x3100 can be
@@ -32,7 +32,7 @@ SetupP2		bis.b #02h,&P2DIR			; P2.2 output
 			mov.w #strg1, R5			; Load the string pointer
 			call #OUTA_STR_UART			; Call string print function
 
-nothing		jmp nothing					; Infinet loop to end program
+nothing		jmp nothing					; Infinite loop to end program
 
 OUTA_STR_UART
 ;----------------------------------------------------------------

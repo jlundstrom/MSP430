@@ -80,15 +80,15 @@ SORT_BYTE
 			;jmp SB_Rtn
 			mov.w R5, R7
 
-SB_Outer	tst.b 0(R5)					; Start of outer loop
+SB_Outer	tst.b 1(R5)					; Start of outer loop
 			jz SB_Rtn
 
 			mov.w R7, R4				; Start of inner loop
-SB_Inner	tst.b 0(R4)
+SB_Inner	tst.b 1(R4)
 			jz SB_InnerBreak
 
 			cmp.b 1(R4), 0(R4)
-			jge SB_InnerEnd
+			jl SB_InnerEnd
 			mov.b 0(R4), R6
 			mov.b 1(R4), 0(R4)
 			mov.b r6, 1(R4)

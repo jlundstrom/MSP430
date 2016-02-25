@@ -45,7 +45,7 @@ void SortString(unsigned char* A) {
 	unsigned char j = 0;
 	unsigned char tmp;
 	for (i = 0; A[i]; i++)
-		for (j = 0; A[j+i]; j++)
+		for (j = 0; A[j+i+1]; j++)
 			if(A[j] > A[j+1])
 			{
 				tmp = A[j];

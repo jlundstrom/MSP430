@@ -39,7 +39,7 @@ mainLoop
 			mov.b P1IN,R4				; Loop untill button state change
 			and.b #0x03,R4				; Filter out everything but SW1 & SW2
 			cmp.b R4,R6					; Did SW status change?
-			jz mainLoop					; Check again if no
+			jeq mainLoop					; Check again if no
 
 			mov.w R4,R6					; Set status to current button press
 
@@ -55,7 +55,7 @@ setSW1_0	mov.b #0x30,6(R5)			; Set SW1 status char to '0'
 checkSW2	mov.b R6,R4					; Get full status register
 			and.b #0x02,R4				; Get SW2 status
 			cmp.b #0x00,R4
-			jz setSW2_0					; Check SW2 current case
+			jeq setSW2_0				; Check SW2 current case
 			mov.b #0x31,15(R5)			; If not pressed set SW2 status to '1'
 			jmp print
 setSW2_0	mov.b #0x30,15(R5)			; Set SW2 status char to '0'

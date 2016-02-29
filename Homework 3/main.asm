@@ -11,8 +11,8 @@
 ; This is the stack and variable area of RAM and begins at
 ; address 0x1100 can be used for program code or constants
 			.sect ".sysmem"
-IN1			.word 0x0100
-IN2			.word 0x0120
+IN1			.word 0xFFFF
+IN2			.word 0x0001
 Result		.word 0x0000
 
 			.sect ".const"				; initialized data rom for
@@ -39,6 +39,9 @@ Problem1
 			mov.w &IN1, R4
 			add.w &IN2, R4
 			mov.w R4, &Result
+
+Problem2
+
 
 
 End			jmp End

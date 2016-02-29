@@ -126,9 +126,8 @@ INBIT_UART
 			call #INCHAR_UART
 			call #OUTA_UART
 
-			xor.b #0x30,R4			; If input is '0' xor 0x30 = 0
-			tst R4					; If it ends up being zero rtn
-			JZ INBIT_ret
+			cmp.b #0x30, R4			; If input is '0' xor 0x30 = 0
+			jeq INBIT_ret			; If it ends up being zero rtn
 			mov.b #0x01,R4			; Else ret 1
 INBIT_ret	ret
 

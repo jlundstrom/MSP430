@@ -14,6 +14,9 @@
 IN1			.word 0xFFFF
 IN2			.word 0x0001
 Result		.word 0x0000
+chr1		.byte 0x0000
+chr2		.byte 0x0000
+hex			.byte 0x0000
 
 			.sect ".const"				; initialized data rom for
 	 									; constants. Use this .sect to
@@ -40,11 +43,43 @@ Problem1
 			add.w &IN2, R4
 			mov.w R4, &Result
 
-Problem2
-
-
-
+Problem3
+			mov.b $chr1, R4
+			bic.b #0x20, R4
+			mov.b R4, &chr2
+Problem4
+			mov.b &ch1, R4
+			call #GET_HEX_VALUE
+			mov.b R4, R5
+			mov.b &ch2, R4
+			call #GET_HEX_VALUE
+			rlc.b R5
+			rlc.b R5
+			rlc.b R5
+			rlc.b R5
+			bis.b R4,R5
+			mov.b R5, &hex
 End			jmp End
+
+GET_HEX_VALUE
+;----------------------------------------------------------------
+; Take character stored in R4 and get the hex value
+; Returns in R4 				   e.g. '2' => 0x2 and 'F' => 0xF
+;----------------------------------------------------------------
+			cmp.b #0x3A, R4
+			jge chkAlpha				; '0'-'9' is 0x30-0x39
+			cmp.b #0x30, R4
+			jl Invalid
+			and.b #0x0F, R4				; Return first 4 bits set
+			jmp RtnGHV
+chkAlpha	cmp.b #0x47, R4
+			jge	Invalid					; 'A'-'F' is 0x41-0x46
+			cmp.b #0x41, R4
+			jl Invalid
+			sub.b #0x37, R4				; 0x37 is offset from ascii
+			jmp RtnGHV
+Invalid		mov.b #0x00, R4				; if invalid clear
+RtnGHV		ret
 
 SORT_BYTE
 ;----------------------------------------------------------------

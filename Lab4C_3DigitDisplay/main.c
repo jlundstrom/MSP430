@@ -8,6 +8,8 @@
 #include "stdio.h"
 
 void Init_LCD(void);
+void SetLCD(unsigned int i);
+unsigned int RollOverForDec(unsigned int i);
 // setup a pointer to the area of memory of the TMS430 that points to
 // the segments
 // of the softbaugh LCD LCDM3 = the starting address
@@ -22,43 +24,61 @@ void Init_LCD(void);
 // such as battery status, antenna, f1-f4, etc.
 // there are 7 seven segment displays
 unsigned char *LCDSeg = (unsigned char *) &LCDM3;
-unsigned char *Digits = {0x3f, 0x06, 0x5b, 0x4f, // 0-3
-						 0x66, 0x6d, 0x7d, 0x07, // 4-7
-						 0x7f, 0x67, 0x76, 0x7c, // 8-b
-						 0x39, 0x5e, 0x79, 0x71} // c-f
+unsigned char Digits[] = { 	0x5f, 0x06, 0x6b, 0x2f, // 0-3
+							0x36, 0x3d, 0x7d, 0x07, // 4-7
+							0x7f, 0x37, 0x77, 0x7c, // 8-b
+							0x59, 0x6e, 0x79, 0x71}; // c-f
 // there are 11 locations that are needed for the softbaugh LCD
 // ony 7 used for the seven segment displays
 int LCD_SIZE = 11;
+int Num_SIZE = 3;
 
 int main(void) {
 	volatile unsigned char a;
 	volatile unsigned char swStatus;
 	volatile unsigned int i; // volatile to prevent optimization
-	volatile unsigned int Number;
+	volatile unsigned int number;
 	WDTCTL = WDTPW + WDTHOLD; // Stop watchdog timer
 	// setup pprt 3 as an output so to be able to turn on the LED
 	P2DIR |= 0x02; // Set P1.0 to output direction
+	P1DIR &= ~0x03; // Enable switches as inputs
 	// go Initialize the LCD
 	Init_LCD();
+	number = 0x00;
+	while (1) {
+		if ((P1IN & 0x3) == 0x01)
+			number -= 1;
+		else if((P1IN & 0x3) == 0x02)
+			number += 1;
 
-	while(1)
-		for(a = 0; a < 0x10;a++)
-		{
-			LCDSeg[0] = Digits[a];
+		number = RollOverForDec(number);
+		SetLCD(number);
 
-			i = 10000; // SW Delay
-			while(i != 0)
-				i--;
-		}
-
-	// now that all the LCD segments have been turned on just toggle
-	// the yellow LED on / off
-	for (;;) {
-		P2OUT ^= 0x02; // Toggle P1.0 using exclusive-OR
-		i = 10000; // SW Delay
-		do
+		i = 0x0FFF; // SW Delay
+		while (i != 0)
 			i--;
-		while (i != 0);
+	}
+
+}
+
+unsigned int RollOverForDec(unsigned int i) {
+	unsigned int orig = i;
+	char pos;
+	for (pos = 1; pos <= Num_SIZE; pos++) {
+		if ((orig & 0x0F) == 0x0A)
+			i += 6 << (4 * (pos - 1));
+		else if ((orig & 0x0F) == 0x0F)
+			i -= 6 << (4 * (pos - 1));
+		orig = i >> (4 * pos);
+	}
+	return i;
+}
+
+void SetLCD(unsigned int i) {
+	char pos = 0;
+	for (pos = 0; pos < Num_SIZE; pos++) {
+		LCDSeg[pos] = Digits[i & 0x0F];
+		i = i >> 4;
 	}
 }
 

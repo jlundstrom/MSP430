@@ -22,10 +22,10 @@ void Init_LCD(void);
 // such as battery status, antenna, f1-f4, etc.
 // there are 7 seven segment displays
 unsigned char *LCDSeg = (unsigned char *) &LCDM3;
-unsigned char *Digits = {0x3f, 0x06, 0x5b, 0x4f, // 0-3
-						 0x66, 0x6d, 0x7d, 0x07, // 4-7
-						 0x7f, 0x67, 0x76, 0x7c, // 8-b
-						 0x39, 0x5e, 0x79, 0x71} // c-f
+unsigned char Digits[] = { 0x5f, 0x06, 0x6b, 0x2f, // 0-3
+		0x36, 0x3d, 0x7d, 0x07, // 4-7
+		0x7f, 0x37, 0x77, 0x7c, // 8-b
+		0x59, 0x6e, 0x79, 0x71 }; // c-f
 // there are 11 locations that are needed for the softbaugh LCD
 // ony 7 used for the seven segment displays
 int LCD_SIZE = 11;

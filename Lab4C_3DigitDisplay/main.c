@@ -80,11 +80,11 @@ unsigned int RollOverForDec(unsigned int i) {
 		i += 0x60;
 	if ((i&0x0F0) == 0x0F0)
 		i -= 0x60;
-	if ((i&0x00F) == 0x00A)
+	if ((i&0xF00) == 0xA00)
 		i += 0x600;
-	if ((i&0x00F) == 0x00F)
+	if ((i&0xF00) == 0xF00)
 		i -= 0x600;
-	return i
+	return i;
 }
 
 void SetLCD(unsigned int i) {

@@ -62,16 +62,29 @@ int main(void) {
 }
 
 unsigned int RollOverForDec(unsigned int i) {
-	unsigned int orig = i;
-	char pos;
-	for (pos = 1; pos <= Num_SIZE; pos++) {
-		if ((orig & 0x0F) == 0x0A)
-			i += 6 << (4 * (pos - 1));
-		else if ((orig & 0x0F) == 0x0F)
-			i -= 6 << (4 * (pos - 1));
-		orig = i >> (4 * pos);
-	}
-	return i;
+//	unsigned int orig = i;
+//	char pos;
+//	for (pos = 1; pos <= Num_SIZE; pos++) {
+//		if ((orig & 0x0F) == 0x0A)
+//			i += 6 << (4 * (pos - 1));
+//		else if ((orig & 0x0F) == 0x0F)
+//			i -= 6 << (4 * (pos - 1));
+//		orig = i >> (4 * pos);
+//	}
+//	return i;
+	if ((i&0x00F) == 0x00A)
+		i += 0x6;
+	if ((i&0x00F) == 0x00F)
+		i -= 0x6;
+	if ((i&0x0F0) == 0x0A0)
+		i += 0x60;
+	if ((i&0x0F0) == 0x0F0)
+		i -= 0x60;
+	if ((i&0x00F) == 0x00A)
+		i += 0x600;
+	if ((i&0x00F) == 0x00F)
+		i -= 0x600;
+	return i
 }
 
 void SetLCD(unsigned int i) {

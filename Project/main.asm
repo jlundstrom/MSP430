@@ -14,12 +14,13 @@
 			.sect ".sysmem"				; initialized data rom for
 	 									; constants. Use this .sect to
 										; put data in ROM
-strg1		.byte 0x0d,0x0a 			; add a CR and a LF
-			.string	"_"
-										; String used for print function
-	 									; in ROM
-			.byte 0x0d,0x0a 			; add a CR and a LF
+strg1		.string	"0123456789ABCDEF"
+MHeader		.string	"M["
+CRLF		.byte 0x0d,0x0a 			; add a CR and a LF
 			.byte 0x00					; null terminate the string with
+			.byte 0x00					; null terminate the string with
+
+MemPointer	.byte 0x00					; null terminate the string with
 
 ; This is the code area flash begins at address 0x3100 can be
 ; used for program code or constants
@@ -35,21 +36,206 @@ SetupP2		bis.b #02h,&P2DIR			; P2.2 output
 			call #Init_UART				; go initialize the uart
 
 mainLoop
-			call #GET_HEX_VALUE
-			mov.b R4, R5
-			rlc.b R5					; Need to shift 4 times or mul by 16
-			rlc.b R5
-			rlc.b R5
-			rlc.b R5
-			bic.b #0x0F, R5
-			call #GET_HEX_VALUE
-			bis.b R5, R4
-
-			mov.w #strg1,R5				; String Pointer
-			mov.b R4, 2(R5)
+			mov.w #CRLF,R5				; String Pointer
 			call #OUTA_STR_UART
+			mov.b #0x3e, R4
+			call #OUTA_UART
+			mov.b #0x20, R4
+			call #OUTA_UART
+
+			call #INCHAR_UART
+			call #OUTA_UART
+
+			cmp #0x4d, R4
+			jeq MEM_MODE
+
+			cmp #0x44, R4
+			jeq DATA_MODE
+
 
 			jmp mainLoop				; Loop and wait for next status change
+
+MEM_MODE
+;----------------------------------------------------------------
+; Enters Memory Mode - register 6 will hold the active address
+;----------------------------------------------------------------
+			call #GET_HEX_WORD
+			mov.w R5, MemPointer
+
+			mov.w #CRLF,R5				; String Pointer
+			call #OUTA_STR_UART
+
+Core_Mem	mov.b #0x4d, R4
+			call #OUTA_UART
+			mov.b #0x5b, R4
+			call #OUTA_UART
+
+			mov.w MemPointer, R4
+			call #PRINT_HEX_WORD
+
+			mov.b #0x5d, R4
+			call #OUTA_UART
+			mov.b #0x3e, R4
+			call #OUTA_UART
+
+			call #INCHAR_UART
+			call #OUTA_UART
+
+			cmp #0x50, R4
+			jeq Core_Mem_Inc
+
+			cmp #0x4E, R4
+			jeq Core_Mem_Dec
+
+			cmp #0x20, R4
+			jeq mainLoop
+
+			cmp #0x52, R4
+			jeq Core_Mem_Print
+
+			cmp #0x57, R4
+			jeq Core_Mem_Write
+
+Core_Mem_N	mov.w #CRLF,R5				; String Pointer
+			call #OUTA_STR_UART
+			jmp Core_Mem
+
+
+Core_Mem_Inc
+			inc.w MemPointer
+			jmp Core_Mem_N
+
+Core_Mem_Dec
+			dec.w MemPointer
+			jmp Core_Mem_N
+
+Core_Mem_Print
+			mov.w #CRLF,R5				; String Pointer
+			call #OUTA_STR_UART
+			mov.w MemPointer, R4
+			mov.w 0(R4), R4
+			call #PRINT_HEX_WORD
+			jmp Core_Mem_N
+
+Core_Mem_Write
+			call #GET_HEX_WORD
+			mov.w MemPointer, R4
+			mov.w R5, 0(R4)
+			jmp Core_Mem_N
+
+DATA_MODE
+			call #GET_HEX_WORD
+			mov.w R5, R6
+			call #GET_HEX_WORD
+			mov.w R5, R7
+
+			mov.w #CRLF,R5				; String Pointer
+			call #OUTA_STR_UART
+
+			mov.b #0x00, R8
+
+Data_loop
+			mov.w @R6, R4
+			call #PRINT_HEX_WORD
+			add.w #0x02, R6
+
+			mov.b #0x20, R4
+			call #OUTA_UART
+
+			inc.b R8
+			cmp.b #0x08, R8
+			jeq Data_Mode_CRLF
+
+Data_Mode_Rtn
+			cmp.w R7, R6
+			jl	Data_loop
+
+Data_Mode_N
+			mov.w #CRLF,R5				; String Pointer
+			call #OUTA_STR_UART
+			jmp mainLoop
+
+Data_Mode_CRLF
+			call #PRINT_ASCII_Line
+			mov.w #CRLF,R5				; String Pointer
+			call #OUTA_STR_UART
+			mov.w #0x00, R8
+			jmp Data_Mode_Rtn
+
+
+PRINT_ASCII_Line
+;----------------------------------------------------------------
+; Prints 16 bytes behind register 6 as a clean string
+;----------------------------------------------------------------
+			push R5
+			push R8
+			mov.w R6, R8
+			add.w #-0x10, R8
+
+Print_Ascii_Loop
+			mov.w 0(R8), R5
+			swpb R5
+			call #PRINT_CLEAN_ASCII
+			swpb R5
+			call #PRINT_CLEAN_ASCII
+			add.w #0x02, R8
+			cmp.w R8, R6
+			jne Print_Ascii_Loop
+
+
+			mov.b #0x00, R8
+			pop R8
+			pop R5
+			ret
+
+
+PRINT_CLEAN_ASCII
+;----------------------------------------------------------------
+; Prints the value stroed in register 5 as a ASCII only if valid
+;----------------------------------------------------------------
+			push R4
+			cmp.b #0x21, R5
+			jl Print_Dot
+			cmp.b #0x7F, R5
+			jge Print_Dot
+
+			mov.b R5, R4
+			call #OUTA_UART
+			pop R4
+			ret
+
+Print_Dot	mov.b #0x2E, R4
+			call #OUTA_UART
+			pop R4
+			ret
+
+
+OUTH_UART
+;----------------------------------------------------------------
+; prints to the screen the Hex value stored in register 4 and
+; uses register 5 as a temp value
+;----------------------------------------------------------------
+			push R4
+			push R5
+			mov.b R4, R5
+			rra.b R4
+			rra.b R4
+			rra.b R4
+			rra.b R4
+			and.w #0x0F, R4
+			add.w #strg1, R4			; Add offset of hex val relative to array start
+			mov.b 0(R4), R4				; Hex[i>>4] (Getting char from string)
+			call #OUTA_UART				; Prints char
+
+			mov.b R5, R4
+			and.w #0x0F, R4				; Gets 4 lsb
+			add.w #strg1, R4			; Prints char based on offset
+			mov.b 0(R4), R4				; Hex[i>>4] (Getting char from string)
+			call #OUTA_UART
+
+			pop R5
+			pop R4
+			ret
 
 OUTA_STR_UART
 ;----------------------------------------------------------------
@@ -71,12 +257,23 @@ RtnPrint	pop R5						; Restore registers we modified
 			pop R4
 			ret							; Return to caller
 
+PRINT_HEX_WORD
+;----------------------------------------------------------------
+; Prints the value stroed in register 4 as a hex value
+;----------------------------------------------------------------
+			swpb R4
+			call #OUTH_UART
+			swpb R4
+			call #OUTH_UART
+			ret
+
 GET_HEX_WORD
 ;----------------------------------------------------------------
 ; Requests 16-bits worth of hex data from user
 ; uses register 4 as a temp value and returns in R5
 ;----------------------------------------------------------------
 			push R4
+			mov.w #0x00, R5
 			call #GET_HEX_VALUE
 			mov.b R4, R5
 			rlc.b R5					; Need to shift 4 times or mul by 16
@@ -86,16 +283,17 @@ GET_HEX_WORD
 			bic.b #0x0F, R5
 			call #GET_HEX_VALUE
 			bis.b R4, R5
-			sxt R5
+			;sxt R5
 			swpb R5
 			call #GET_HEX_VALUE
-			rlc.b R4					; Need to shift 4 times or mul by 16
-			rlc.b R4
-			rlc.b R4
-			rlc.b R4
-			bis.b R4, R5
+			rlc.w R4					; Need to shift 4 times or mul by 16
+			rlc.w R4
+			rlc.w R4
+			rlc.w R4
+			and.w #0xF0, R4
+			bis.w R4, R5
 			call #GET_HEX_VALUE
-			bis.b R4, R5
+			bis.w R4, R5
 			pop R4
 			ret
 
@@ -119,8 +317,9 @@ chkAlpha	cmp #0x47, R4
 			jl Invalid
 			sub.b #0x37, R4				; 0x37 is offset from ascii
 			jmp RtnGHV
-Invalid		mov.b #0x00, R4				; if invalid clear
-RtnGHV		ret
+Invalid		jmp GET_HEX_VALUE			; if invalid Try Again
+RtnGHV		and.w #0xFF, R4
+			ret
 
 OUTA_UART
 ;----------------------------------------------------------------

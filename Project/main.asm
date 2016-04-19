@@ -20,6 +20,9 @@ CRLF		.byte 0x0d,0x0a 			; add a CR and a LF
 			.byte 0x00					; null terminate the string with
 			.byte 0x00					; null terminate the string with
 
+MATHRES		.string " C=_, N=_, Z=_"
+			.byte 0x00
+
 MemPointer	.byte 0x00					; null terminate the string with
 
 ; This is the code area flash begins at address 0x3100 can be
@@ -51,6 +54,9 @@ mainLoop
 
 			cmp #0x44, R4
 			jeq DATA_MODE
+
+			cmp #0x48, R4
+			jeq MATH_MODE
 
 
 			jmp mainLoop				; Loop and wait for next status change
@@ -209,7 +215,71 @@ Print_Dot	mov.b #0x2E, R4
 			pop R4
 			ret
 
+MATH_MODE
+			push R5
+			push R4
+			push R6
+			call #INCHAR_UART
+			call #OUTA_UART
 
+			mov.b R4, R5
+
+			cmp #0x41, R4
+			jeq ADD_MATH
+
+			cmp #0x53, R4
+			jeq SUB_MATH
+
+RTN_MATH
+			pop R6
+			pop R4
+			pop R5
+			jmp mainLoop
+
+ADD_MATH
+			call #GET_HEX_WORD
+			mov.w R5, R6
+			call #GET_HEX_WORD
+			add.w R6, R5
+			mov.w R2, R6
+
+			jmp MATH_PRINT
+
+SUB_MATH
+			call #GET_HEX_WORD
+			mov.w R5, R6
+			call #GET_HEX_WORD
+			sub.w R6, R5
+			mov.w R2, R6
+
+MATH_PRINT	mov.w R5, R4
+
+			mov.w #CRLF,R5
+			call #OUTA_STR_UART
+
+			call #PRINT_HEX_WORD
+
+			mov.w #MATHRES,R5
+
+			; " C=_, N=_, Z=_"
+			mov.w R6, R4
+			and.w #0x01, R4
+			add.b #0x30, R4
+			mov.b R4, 3(R5)
+			rra R6
+			mov.w R6, R4
+			and.w #0x01, R4
+			add.b #0x30, R4
+			mov.b R4, 8(R5)
+			rra R6
+			mov.w R6, R4
+			and.w #0x01, R4
+			add.b #0x30, R4
+			mov.b R4, 13(R5)
+
+			call #OUTA_STR_UART
+
+			jmp RTN_MATH
 OUTH_UART
 ;----------------------------------------------------------------
 ; prints to the screen the Hex value stored in register 4 and

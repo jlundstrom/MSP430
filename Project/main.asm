@@ -20,7 +20,7 @@ CRLF		.byte 0x0d,0x0a 			; add a CR and a LF
 			.byte 0x00					; null terminate the string with
 			.byte 0x00					; null terminate the string with
 
-MATHRES		.string " C=_, N=_, Z=_"
+MATHRES		.string " C=_, Z=_, N=_"
 			.byte 0x00
 
 MemPointer	.byte 0x00					; null terminate the string with
@@ -39,23 +39,24 @@ SetupP2		bis.b #02h,&P2DIR			; P2.2 output
 			call #Init_UART				; go initialize the uart
 
 mainLoop
-			mov.w #CRLF,R5				; String Pointer
+			mov.w #CRLF,R5				; Prints a new lines
 			call #OUTA_STR_UART
-			mov.b #0x3e, R4
+
+			mov.b #0x3e, R4				; Prints "> "
 			call #OUTA_UART
 			mov.b #0x20, R4
 			call #OUTA_UART
 
-			call #INCHAR_UART
+			call #INCHAR_UART			; Get and print user input
 			call #OUTA_UART
 
-			cmp #0x4d, R4
+			cmp #0x4d, R4				; If 'M' go to Memory Mode
 			jeq MEM_MODE
 
-			cmp #0x44, R4
+			cmp #0x44, R4				; If 'D' go to Data/Hex Dump Mode
 			jeq DATA_MODE
 
-			cmp #0x48, R4
+			cmp #0x48, R4				; If 'H' go to Math Mode
 			jeq MATH_MODE
 
 
@@ -71,40 +72,40 @@ MEM_MODE
 			mov.w #CRLF,R5				; String Pointer
 			call #OUTA_STR_UART
 
-Core_Mem	mov.b #0x4d, R4
+Core_Mem	mov.b #0x4d, R4				; Prints "M["
 			call #OUTA_UART
 			mov.b #0x5b, R4
 			call #OUTA_UART
 
-			mov.w MemPointer, R4
-			call #PRINT_HEX_WORD
+			mov.w MemPointer, R4		; Prints Memory Cursor
+			call #PRINT_HEX_WORD		; "M[BEEF"
 
-			mov.b #0x5d, R4
-			call #OUTA_UART
+			mov.b #0x5d, R4				; Prints "]>"
+			call #OUTA_UART				; "M[BEEF]>"
 			mov.b #0x3e, R4
 			call #OUTA_UART
 
-			call #INCHAR_UART
+			call #INCHAR_UART			; Get User Input
 			call #OUTA_UART
 
-			cmp #0x50, R4
+			cmp #0x50, R4				; 'P' Goto Memory Increment
 			jeq Core_Mem_Inc
 
-			cmp #0x4E, R4
+			cmp #0x4E, R4				; 'N' Goto Memory Decrement
 			jeq Core_Mem_Dec
 
-			cmp #0x20, R4
+			cmp #0x20, R4				; ' ' Return to Main Program
 			jeq mainLoop
 
-			cmp #0x52, R4
+			cmp #0x52, R4				; 'R' Goto Print data @ Address
 			jeq Core_Mem_Print
 
-			cmp #0x57, R4
+			cmp #0x57, R4				; 'W' Goto Write Data @ Address
 			jeq Core_Mem_Write
 
-Core_Mem_N	mov.w #CRLF,R5				; String Pointer
+Core_Mem_N	mov.w #CRLF,R5				; Print Newline
 			call #OUTA_STR_UART
-			jmp Core_Mem
+			jmp Core_Mem				; Stay in Memory Mode
 
 
 Core_Mem_Inc
@@ -116,24 +117,26 @@ Core_Mem_Dec
 			jmp Core_Mem_N
 
 Core_Mem_Print
-			mov.w #CRLF,R5				; String Pointer
+			mov.w #CRLF,R5				; Print newline
 			call #OUTA_STR_UART
-			mov.w MemPointer, R4
-			mov.w 0(R4), R4
-			call #PRINT_HEX_WORD
-			jmp Core_Mem_N
+			mov.w MemPointer, R4		; Gets location of Memory Cursor
+			mov.w 0(R4), R4				; Gets data @ Address
+			call #PRINT_HEX_WORD		; Prints hex representation
+			jmp Core_Mem_N				; Return to Memory Mode
 
 Core_Mem_Write
-			call #GET_HEX_WORD
-			mov.w MemPointer, R4
+			call #GET_HEX_WORD			; Get data from user
+			mov.w MemPointer, R4		; Save to Address
 			mov.w R5, 0(R4)
-			jmp Core_Mem_N
+			jmp Core_Mem_N				; Return to Memory Mode
 
 DATA_MODE
-			call #GET_HEX_WORD
+			call #GET_HEX_WORD			; Get Starting Address
 			mov.w R5, R6
-			call #GET_HEX_WORD
+			call #GET_HEX_WORD			; Get Ending Address
 			mov.w R5, R7
+			; add.w #0x02, R7			; Adds offset to be inclusive
+										; Todo: add support for sets not divisable by 16
 
 			mov.w #CRLF,R5				; String Pointer
 			call #OUTA_STR_UART
@@ -141,11 +144,11 @@ DATA_MODE
 			mov.b #0x00, R8
 
 Data_loop
-			mov.w @R6, R4
+			mov.w @R6, R4				; Read current starting address and print it
 			call #PRINT_HEX_WORD
 			add.w #0x02, R6
 
-			mov.b #0x20, R4
+			mov.b #0x20, R4				; Print ' '
 			call #OUTA_UART
 
 			inc.b R8
@@ -157,13 +160,13 @@ Data_Mode_Rtn
 			jl	Data_loop
 
 Data_Mode_N
-			mov.w #CRLF,R5				; String Pointer
+			mov.w #CRLF,R5				; Prints newline
 			call #OUTA_STR_UART
 			jmp mainLoop
 
 Data_Mode_CRLF
 			call #PRINT_ASCII_Line
-			mov.w #CRLF,R5				; String Pointer
+			mov.w #CRLF,R5				; Prints newline
 			call #OUTA_STR_UART
 			mov.w #0x00, R8
 			jmp Data_Mode_Rtn
@@ -179,17 +182,15 @@ PRINT_ASCII_Line
 			add.w #-0x10, R8
 
 Print_Ascii_Loop
-			mov.w 0(R8), R5
-			swpb R5
+			mov.w 0(R8), R5				; Get data @ Address
+			swpb R5						; Print left half
 			call #PRINT_CLEAN_ASCII
 			swpb R5
-			call #PRINT_CLEAN_ASCII
+			call #PRINT_CLEAN_ASCII		; Print right half
 			add.w #0x02, R8
 			cmp.w R8, R6
 			jne Print_Ascii_Loop
 
-
-			mov.b #0x00, R8
 			pop R8
 			pop R5
 			ret
@@ -200,17 +201,17 @@ PRINT_CLEAN_ASCII
 ; Prints the value stroed in register 5 as a ASCII only if valid
 ;----------------------------------------------------------------
 			push R4
-			cmp.b #0x21, R5
+			cmp.b #0x21, R5				; Check if printable ascii char
 			jl Print_Dot
 			cmp.b #0x7F, R5
 			jge Print_Dot
 
-			mov.b R5, R4
+			mov.b R5, R4				; Otherwise print valid char
 			call #OUTA_UART
 			pop R4
 			ret
 
-Print_Dot	mov.b #0x2E, R4
+Print_Dot	mov.b #0x2E, R4				; Prints '.'
 			call #OUTA_UART
 			pop R4
 			ret
@@ -219,19 +220,16 @@ MATH_MODE
 			push R5
 			push R4
 			push R6
-			call #INCHAR_UART
+			call #INCHAR_UART			; Get math mode
 			call #OUTA_UART
 
-			mov.b R4, R5
-
-			cmp #0x41, R4
+			cmp #0x41, R4				; 'A' Goto Add
 			jeq ADD_MATH
 
-			cmp #0x53, R4
+			cmp #0x53, R4				; 'S' Goto Sub
 			jeq SUB_MATH
 
-RTN_MATH
-			pop R6
+RTN_MATH	pop R6
 			pop R4
 			pop R5
 			jmp mainLoop
@@ -263,23 +261,24 @@ MATH_PRINT	mov.w R5, R4
 
 			; " C=_, N=_, Z=_"
 			mov.w R6, R4
-			and.w #0x01, R4
+			and.w #0x01, R4				; Take first bit and add to 0x30
 			add.b #0x30, R4
-			mov.b R4, 3(R5)
-			rra R6
+			mov.b R4, 3(R5)				; Store at C position
+			rra R6						; Shift and take first bit and add to 0x30
 			mov.w R6, R4
 			and.w #0x01, R4
 			add.b #0x30, R4
-			mov.b R4, 8(R5)
-			rra R6
+			mov.b R4, 8(R5)				; Store at N position
+			rra R6						; Shift and take first bit and add to 0x30
 			mov.w R6, R4
 			and.w #0x01, R4
 			add.b #0x30, R4
-			mov.b R4, 13(R5)
+			mov.b R4, 13(R5)			; Store at Z position
 
 			call #OUTA_STR_UART
 
 			jmp RTN_MATH
+
 OUTH_UART
 ;----------------------------------------------------------------
 ; prints to the screen the Hex value stored in register 4 and
@@ -347,14 +346,14 @@ GET_HEX_WORD
 			call #GET_HEX_VALUE
 			mov.b R4, R5
 			rlc.b R5					; Need to shift 4 times or mul by 16
-			rlc.b R5
+			rlc.b R5					; So 0x0F -> 0xF0
 			rlc.b R5
 			rlc.b R5
 			bic.b #0x0F, R5
 			call #GET_HEX_VALUE
 			bis.b R4, R5
-			;sxt R5
-			swpb R5
+
+			swpb R5						; e.g. 0x33FF -> 0xFF33
 			call #GET_HEX_VALUE
 			rlc.w R4					; Need to shift 4 times or mul by 16
 			rlc.w R4
@@ -388,7 +387,7 @@ chkAlpha	cmp #0x47, R4
 			sub.b #0x37, R4				; 0x37 is offset from ascii
 			jmp RtnGHV
 Invalid		jmp GET_HEX_VALUE			; if invalid Try Again
-RtnGHV		and.w #0xFF, R4
+RtnGHV		and.w #0x0F, R4
 			ret
 
 OUTA_UART
